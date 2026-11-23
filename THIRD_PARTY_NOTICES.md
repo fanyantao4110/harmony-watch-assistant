@@ -2,6 +2,22 @@
 
 本项目采用 [Apache License 2.0](LICENSE)。
 
+```
+Copyright 2026 鸿蒙手表助手 (Harmony Watch Assistant) contributors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
+
 ## 移植来源
 
 表盘替换逻辑（`27/01` 连接初始化、`27/02` 列表、`27/03` 替换、`27/05` 进度回调、`need` 回执驱动、`VersionPolicy` 版本推进、`FacePolicy` 目标筛选、`FileTransfer` 分块传输等）移植并改写自：
