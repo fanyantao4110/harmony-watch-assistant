@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.wlaz"
+    android:versionCode="100"
+    android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="24" android:targetSdkVersion="34"/>
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true"/>
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="28"/>
+    <!-- Android 11+ 要写 /sdcard/腕连助手/签名包 这种公共目录，必须靠「所有文件访问」。
+         声明了才能用 Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION 引导授权；
+         未授权时会自动回退到应用专属外部目录，不会让签名流程失败。 -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
+    <application
+        android:allowBackup="true"
+        android:label="@string/app_name"
+        android:icon="@drawable/ic_launcher"
+        android:roundIcon="@drawable/ic_launcher"
+        android:usesCleartextTraffic="false"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <activity android:name=".DetailActivity" android:exported="false"/>
+        <activity android:name=".HuaweiIdActivity" android:exported="false"/>
+        <activity android:name=".AppManagerActivity" android:exported="false"/>
+            <activity android:name=".PairActivity" android:exported="false" />
+        <activity android:name=".DevicesActivity" android:exported="false" />
+        <activity android:name=".DiagActivity" android:exported="true" />
+        <activity android:name=".InstallCheckActivity" android:exported="true" />
+    <provider
+        android:name=".HapProvider"
+        android:authorities="com.wlaz.hapfiles"
+        android:exported="false"
+        android:grantUriPermissions="true" />
+
+    </application>
+</manifest>

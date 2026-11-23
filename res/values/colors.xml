@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#F2F2F7</color>
+    <color name="card">#FFFFFF</color>
+    <color name="tx">#000000</color>
+    <color name="tx2">#8E8E93</color>
+    <color name="line">#E5E5EA</color>
+    <color name="blue">#007AFF</color>
+    <color name="orange">#FF9500</color>
+    <color name="seg">#E9E9EE</color>
+    <color name="white">#FFFFFF</color>
+</resources>

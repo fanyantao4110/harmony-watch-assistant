@@ -1,0 +1,32 @@
+# 构建产物
+build/
+*.class
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# 签名与凭证：只保留 assets/ 下两个 pem，其余一律不入库
+*.p7b
+*.p12
+*.jks
+*.bks
+*.keystore
+*.keys
+*.idsig
+
+# 历史 APK（发行版只提交 鸿蒙手表助手_1.0.apk）
+腕连助手_*.apk
+
+# 系统与临时文件
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+tmp_*.zip
+_t*.py
+_push_*.py
+.backup/
