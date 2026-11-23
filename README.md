@@ -80,8 +80,10 @@ Android 端的第三方华为/鸿蒙手表管理工具。通过蓝牙 RFCOMM 通
 ├── sign_web.py                  # 网页版签名逻辑复刻
 ├── verify_hap.py                # 签名与结构校验
 ├── SIGN_APP_说明.md             # 签名工具说明
-└── 鸿蒙手表助手_1.0.apk          # 发行版 APK
+└── 鸿蒙手表助手_1.0.apk          # 发行版 APK（Release 附件名为 HarmonyWatchAssistant_1.0.apk）
 ```
+
+> GitHub 的 Release 附件名只接受 ASCII，因此发行版附件用 `HarmonyWatchAssistant_1.0.apk`，与仓库内的中文名文件是同一个包（SIZE 232040 字节，SHA-256 见 Release 页）。
 
 ---
 
