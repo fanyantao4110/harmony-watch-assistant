@@ -93,7 +93,12 @@ public class OneKeyInstall {
                         throw new Exception("还没拿到手表 UDID，请先连接手表并读取设备信息");
 
                     say(cb, "① 在线申请 Profile…");
-                    byte[] p7b = AgcApi.provisionForWatch(ctx, udid, watchName, log);
+                    // 包名取自源包的原始 bundleName，避免不同软件撞成同一个包名互相覆盖
+                    String rawBundle = Dl.rawBundleOf(srcHap);
+                    String appKey = rawBundle.length() > 0 ? "u_" + rawBundle : "u" + srcHap.length();
+                    String appName = rawBundle.length() > 0
+                            ? rawBundle.substring(rawBundle.lastIndexOf('.') + 1) : "app";
+                    byte[] p7b = AgcApi.provisionForWatch(ctx, udid, watchName, appKey, appName, rawBundle, log);
                     DeviceStore.markAgc(ctx, udid, AgcApi.p(ctx).getString("profile_id", ""));
 
                     say(cb, "② 重签名…");

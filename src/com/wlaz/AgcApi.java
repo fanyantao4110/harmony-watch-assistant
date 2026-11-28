@@ -681,12 +681,80 @@ public static Cert ensureDebugCert(Context c) throws Exception {
     /**
      * 软件名 → **固定**的 AGC 包名。
      * 同一个软件名永远得到同一个包名，不做任何随机。
+     *
+     * ★★ 注意：这个函数只能用「本来就是 ASCII 的名字」当输入。
+     * 真实链路里必须优先用安装包自带的原始 bundleName（见 bundleForApp 的 3 参重载），
+     * 因为中文软件名经 sanitizeAppName 会被清成空串、回退成 "app"，
+     * 导致所有中文名软件共用 com.wlaz.app 互相覆盖。仅在没有原始包名时兜底。
      */
     public static String fixedBundleOf(String appName) {
         String base = sanitizeAppName(appName);
         if (base.length() == 0) base = "app";
         return "com.wlaz." + base;
     }
+
+    /**
+     * 取一个软件要用的包名（**唯一性优先**）。
+     *
+     * 优先级：
+     *   ① prefs 已落盘过 → 直接用（保证同一软件永远同一包名，Profile 可复用）
+     *   ② 安装包自带的原始 bundleName（最可靠，天然唯一：
+     *      com.example.dazhuankuai / com.crab.jump3D / com.github.kqakqakqa...）
+     *   ③ 原始包名也没有 → 用软件名推导
+     *
+     * @param rawBundle 安装包 config.json 里读出来的原始 bundleName，可为空
+     */
+    public static String bundleForApp(Context c, String appKey, String appName, String rawBundle) {
+        String key = "app_" + (appKey == null ? "" : appKey.trim());
+
+        // ② 先算出「本次应该用的包名」：安装包原始包名优先
+        String b = normalizeRawBundle(rawBundle);
+        // ③ 兜底：原始包名读不到时才退回按软件名推导
+        if (b.length() == 0) b = fixedBundleOf(appName);
+
+        String saved = p(c).getString(key + "_bundle", "");
+        if (saved.length() > 0) {
+            // ★ 历史脏值迁移：旧版用中文名推导，全部撞成 com.wlaz.app，
+            //   导致不同软件互相覆盖。只要现在能从安装包读到真包名，就覆盖掉它。
+            if (isLegacySharedBundle(saved) && b.length() > 0
+                    && !isLegacySharedBundle(b) && !b.equals(saved)) {
+                android.util.Log.i("AgcApi", "包名迁移 " + key + " : " + saved + " -> " + b);
+                p(c).edit().putString(key + "_bundle", b).apply();
+                return b;
+            }
+            return saved;
+        }
+
+        p(c).edit().putString(key + "_bundle", b).apply();
+        return b;
+    }
+
+    /**
+     * 是否是「退化包名」——旧版中文软件名被 sanitize 清空后回退成 app 的产物。
+     * 这类包名被多个软件共用，必须迁移。
+     */
+    static boolean isLegacySharedBundle(String b) {
+        if (b == null) return false;
+        String t = b.trim().toLowerCase(Locale.US);
+        return t.equals("com.wlaz.app") || t.equals("com.wlaz.app.app");
+    }
+    /**
+     * 校验 / 规范化原始 bundleName。
+     * 只接受「像包名」的值（至少一个点、只含合法字符、不含中文），
+     * 不合格一律返回 ""，交给上层兜底，避免把脏值写进 Profile 导致申请失败。
+     */
+    public static String normalizeRawBundle(String raw) {
+        if (raw == null) return "";
+        String t = raw.trim().toLowerCase(Locale.US);
+        if (t.length() < 3 || t.length() > 120) return "";
+        // 必须只含合法字符
+        if (!t.matches("[a-z0-9_.]+")) return "";
+        // 必须至少有一个点（a.b），且不以点开头/结尾、无连续点
+        if (t.indexOf('.') < 0) return "";
+        if (t.startsWith(".") || t.endsWith(".") || t.contains("..")) return "";
+        return t;
+    }
+
 
     /**
      * 按包名查 appId：GET `api/publish/v2/appid-list?packageName=`。
@@ -955,11 +1023,24 @@ public static Cert ensureDebugCert(Context c) throws Exception {
      */
     public static byte[] provisionForWatch(Context c, String udid, String watchName,
                                           String appKey, String appName, StringBuilder log) throws Exception {
+        return provisionForWatch(c, udid, watchName, appKey, appName, "", log);
+    }
+
+    /**
+     * 一站式（带原始包名）：设备 → 证书 → 应用 → Profile → 下载 p7b。
+     *
+     * @param rawBundle 安装包 config.json 里的原始 bundleName（决定签名后包名，
+     *                  为空时才会退回按软件名推导 —— 中文名软件推导结果会撞成 com.wlaz.app）
+     */
+    public static byte[] provisionForWatch(Context c, String udid, String watchName,
+                                          String appKey, String appName, String rawBundle,
+                                          StringBuilder log) throws Exception {
         if (!hasCredential(c)) throw new Exception("还没有登录开发者账号（我的 → DevEco 账号 → 登录）");
 
-        // ★ 包名固定：同一个软件永远同一个包名，绝不随机
-        String bundle = bundleForApp(c, appKey, appName);
-        log(log, "包名（固定）：" + bundle);
+        // ★ 包名：优先用安装包原始 bundleName，保证每个软件唯一、互不覆盖
+        String bundle = bundleForApp(c, appKey, appName, rawBundle);
+        log(log, "包名：" + bundle + (rawBundle != null && rawBundle.length() > 0
+                ? "（取自安装包原始包名）" : "（按软件名推导）"));
 
         Device dev = ensureDevice(c, udid, watchName);
         log(log, "设备已登记：" + dev.name + " (" + dev.id + ")");

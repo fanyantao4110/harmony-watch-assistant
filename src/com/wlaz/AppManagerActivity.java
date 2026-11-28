@@ -595,24 +595,15 @@ public class AppManagerActivity extends Activity {
                     return;
                 }
                 final File f = src;
-                // 读包名只是为了给 appKey/appName 起名，签名本身完全交给 Dl
-                String appKey = "u" + f.length();
-                String appName = "app";
-                try {
-                    java.util.LinkedHashMap<String, byte[]> files = HapSigner.collectFromApp(f);
-                    byte[] cfg = files.get("config.json");
-                    if (cfg != null) {
-                        Object root = MiniJson.parse(new String(cfg, "UTF-8"));
-                        String bundle = MiniJson.str(root, "app.bundleName");
-                        if (bundle.length() == 0) bundle = MiniJson.str(root, "bundleName");
-                        if (bundle.length() > 0) {
-                            appKey = bundle;
-                            appName = bundle.contains(".")
-                                    ? bundle.substring(bundle.lastIndexOf('.') + 1) : bundle;
-                        }
-                    }
-                } catch (Throwable ignore) {
-                }
+                // 读包名：既用来派生 appKey，也用于决定签名后的 bundleName。
+                // ★ appKey 绝不能再用文件大小（"u" + f.length()）——
+                //   两个不同软件只要字节数相同就会共用同一个 key，
+                //   结果 bundle 被写串、装上去互相覆盖。改用包内 bundleName 派生。
+                String rawBundle = Dl.rawBundleOf(f);
+                String appKey = rawBundle.length() > 0 ? "u_" + rawBundle : "u" + f.length();
+                String appName = rawBundle.length() > 0
+                        ? rawBundle.substring(rawBundle.lastIndexOf('.') + 1)
+                        : "app";
                 final String fkey = appKey;
                 final String fname2 = appName;
                 h.post(new Runnable() {

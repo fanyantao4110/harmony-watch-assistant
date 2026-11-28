@@ -418,9 +418,14 @@ public class Dl {
     static void doProvisionSignInstall(Context ctx, String addr, String udid, String watchName,
                                        File src, File out, String appKey, String appName,
                                        android.app.ProgressDialog pd, int startPct) throws Exception {
+        // ★ 从安装包读原始 bundleName —— 这是签名后包名的唯一可靠来源。
+        //   用软件名推导会把所有中文名软件都撞成 com.wlaz.app，互相覆盖。
+        String rawBundle = rawBundleOf(src);
+        android.util.Log.i("Dl", "安装包原始包名=" + rawBundle + " appKey=" + appKey + " appName=" + appName);
+
         setPct(pd, startPct, "② 在线申请 Profile…");
         StringBuilder log = new StringBuilder();
-        byte[] p7b = AgcApi.provisionForWatch(ctx, udid, watchName, appKey, appName, log);
+        byte[] p7b = AgcApi.provisionForWatch(ctx, udid, watchName, appKey, appName, rawBundle, log);
         DeviceStore.markAgc(ctx, udid, AgcApi.p(ctx).getString("profile_id", ""));
 
         setPct(pd, (startPct + 100) / 2, "③ 重签名…");
@@ -432,6 +437,31 @@ public class Dl {
         Bridge.init(ctx);
         final Uri uri = HapProvider.uriFor(out);
         if (!Bridge.install(addr, uri, ctx)) throw new Exception("推送失败：" + Bridge.error());
+    }
+
+    /**
+     * 从安装包（.app / .hap）里读出原始 bundleName。
+     * 读不到返回 ""，上层会退回按软件名推导。
+     *
+     * 为什么要这么做：包名必须每个软件唯一，否则手表上后装的会覆盖先装的。
+     * 原包自带的 bundleName（com.example.dazhuankuai 之类）天然唯一，
+     * 而中文软件名过 sanitizeAppName 只剩空串 → 全部变成 com.wlaz.app。
+     */
+    static String rawBundleOf(File src) {
+        if (src == null || !src.isFile()) return "";
+        try {
+            java.util.LinkedHashMap<String, byte[]> files = HapSigner.collectFromApp(src);
+            byte[] cfg = files.get("config.json");
+            if (cfg == null || cfg.length == 0) return "";
+            Object root = MiniJson.parse(new String(cfg, "UTF-8"));
+            String b = MiniJson.str(root, "app.bundleName");
+            if (b.length() == 0) b = MiniJson.str(root, "bundleName");
+            if (b.length() == 0) b = MiniJson.str(root, "module.bundleName");
+            return AgcApi.normalizeRawBundle(b);
+        } catch (Throwable t) {
+            android.util.Log.w("Dl", "rawBundleOf 失败：" + t);
+            return "";
+        }
     }
 
     /**
